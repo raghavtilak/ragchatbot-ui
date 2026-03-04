@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { VscSparkleFilled, VscSend, VscClose, VscChromeMaximize } from "react-icons/vsc";
+import { VscSparkleFilled, VscSend, VscClose, VscChromeMaximize, VscChromeMinimize } from "react-icons/vsc";
 import DotTextLoading from "./DotTextLoading";
+import "./ChatBox.css";
 
 type Message = {
     id: string;
@@ -10,13 +11,12 @@ type Message = {
 };
 
 export default function Chatbox() {
-
-    const apiUrl = import.meta.env.VITE_API_URL
+    const apiUrl = import.meta.env.VITE_API_URL;
 
     const [open, setOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { id: "1", sender: "bot", text: "Hi 👋 How can I help you?" },
+        { id: "1", sender: "bot", text: "Namaste! 🙏 I'm your Rasoi Assistant. Ask me about Indian recipes, spices, or cooking techniques!" },
     ]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -40,7 +40,6 @@ export default function Chatbox() {
             if (event.data === "[DONE]") {
                 setLoading(false);
                 eventSourceRef.current?.close();
-
                 setMessages((prev) => {
                     const updated = [...prev];
                     const last = updated[updated.length - 1];
@@ -51,7 +50,6 @@ export default function Chatbox() {
             }
 
             accumulatedText += event.data;
-
             setMessages((prev) => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
@@ -68,12 +66,10 @@ export default function Chatbox() {
 
     const sendMessage = () => {
         if (!input.trim()) return;
-
         setMessages((prev) => [
             ...prev,
             { id: crypto.randomUUID(), sender: "user", text: input },
         ]);
-
         setLoading(true);
         streamBotResponse(input);
         setInput("");
@@ -91,107 +87,49 @@ export default function Chatbox() {
         <>
             {/* Floating Button */}
             {!open && (
-                <button
-                    onClick={() => setOpen(true)}
-                    style={{
-                        position: "fixed",
-                        bottom: "2vh",
-                        right: "2vw",
-                        width: "3rem",
-                        height: "3rem",
-                        borderRadius: "50%",
-                        border: "none",
-                        background: "#1677ff",
-                        color: "#fff",
-                        fontSize: "1.2rem",
-                        zIndex: 1000,
-                        cursor: "pointer",
-
-                    }}
-                >
-                    <VscSparkleFilled style={{ display: 'flex', justifySelf: 'center' }} />
+                <button className="fab" onClick={() => setOpen(true)} title="Open Rasoi Assistant">
+                    <VscSparkleFilled />
+                    <span className="fab-ring"></span>
                 </button>
             )}
 
             {/* Chat Window */}
             {open && (
-                <div
-                    style={{
-                        position: "fixed",
-                        bottom: "3vh",
-                        right: "3vw",
-                        width: "90vw",
-                        maxWidth: expanded ? "42rem" : "22rem",
-                        height: expanded ? "80vh" : "60vh",
-                        background: "#fff",
-                        borderRadius: "0.5em",
-                        display: "grid",
-                        gridTemplateRows: "auto 1fr auto",
-                        zIndex: 1000,
-                        transition: "all 0.35s ease-in-out",
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-                    }}
-                >
+                <div className={`chat-window ${expanded ? "expanded" : ""}`}>
                     {/* Header */}
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            background: "#1890ff",
-                            color: "#fff",
-                            borderRadius: "0.5em 0.5em 0 0",
-                        }}
-                    >
-                        <div style={{ flex: 1, fontWeight: 600 }}>Chat Assistant</div>
-
-                        <button
-                            onClick={() => setExpanded((p) => !p)}
-                            style={iconBtn}
-                        >
-                            <VscChromeMaximize />
-                        </button>
-
-                        <button
-                            onClick={() => {
+                    <div className="chat-header">
+                        <div className="chat-header-left">
+                            <div className="bot-avatar">🍛</div>
+                            <div>
+                                <div className="chat-title">Rasoi Assistant</div>
+                                <div className="chat-status">
+                                    <span className="status-dot"></span>
+                                    Powered by Ollama + RAG
+                                </div>
+                            </div>
+                        </div>
+                        <div className="chat-header-actions">
+                            <button className="icon-btn" onClick={() => setExpanded(p => !p)} title={expanded ? "Minimize" : "Expand"}>
+                                {expanded ? <VscChromeMinimize /> : <VscChromeMaximize />}
+                            </button>
+                            <button className="icon-btn" onClick={() => {
                                 eventSourceRef.current?.close();
                                 setLoading(false);
                                 setOpen(false);
-                            }}
-                            style={iconBtn}
-                        >
-                            <VscClose />
-                        </button>
+                            }} title="Close">
+                                <VscClose />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Messages */}
-                    <div
-                        style={{
-                            overflowY: "auto",
-                            padding: "0.5em",
-                        }}
-                    >
+                    <div className="chat-messages">
                         {messages.map((msg) => (
-                            <div
-                                key={msg.id}
-                                style={{
-                                    display: "flex",
-                                    justifyContent:
-                                        msg.sender === "user" ? "flex-end" : "flex-start",
-                                    marginBottom: "0.5rem",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        maxWidth: "75%",
-                                        padding: "0.6rem 0.8rem",
-                                        borderRadius: "0.75rem",
-                                        background: msg.sender === "user" ? "#1677ff" : "#f5f5f5",
-                                        color: msg.sender === "user" ? "#fff" : "#000",
-                                        whiteSpace: "pre-wrap",
-                                        wordBreak: "break-word",
-                                        fontSize: "0.9rem",
-                                    }}
-                                >
+                            <div key={msg.id} className={`message-row ${msg.sender}`}>
+                                {msg.sender === "bot" && (
+                                    <div className="msg-avatar">🍛</div>
+                                )}
+                                <div className={`bubble ${msg.sender}`}>
                                     {msg.text || (msg.streaming && <DotTextLoading />)}
                                 </div>
                             </div>
@@ -199,41 +137,21 @@ export default function Chatbox() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
-                    <div
-                        style={{
-                            display: "flex",
-                            padding: "0.5em",
-                            gap: "0.5em",
-                        }}
-                    >
+                    {/* Input Bar */}
+                    <div className="chat-input-bar">
                         <input
+                            className="chat-input"
                             value={input}
                             disabled={loading}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Type your message..."
-                            style={{
-                                flex: 1,
-                                color: 'black',
-                                backgroundColor: 'white',
-                                padding: "0.2em",
-                                borderRadius: "0.4em",
-                                border: "1px solid #ccc",
-                                fontSize: "0.9rem",
-                            }}
+                            placeholder="Ask about a recipe..."
                             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                         />
-
                         <button
+                            className={`send-btn ${loading ? "disabled" : ""}`}
                             onClick={sendMessage}
                             disabled={loading}
-                            style={{
-                                border: "none",
-                                background: "none",
-                                cursor: "pointer",
-                                fontSize: "1.2rem",
-                                color: "#1677ff",
-                            }}
+                            title="Send"
                         >
                             <VscSend />
                         </button>
@@ -243,12 +161,3 @@ export default function Chatbox() {
         </>
     );
 }
-
-const iconBtn: React.CSSProperties = {
-    background: "none",
-    border: "none",
-    color: "#fff",
-    fontSize: "1.2rem",
-    cursor: "pointer",
-    marginLeft: "0.3em",
-};
